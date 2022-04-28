@@ -42,46 +42,50 @@ namespace GMLTool
                 Console.WriteLine();
             }
 
-            var inputArgument = new Argument<FileInfo>(
+            Argument inputArgument = new Argument<FileInfo>(
                     "input",
                     "Input GML file").ExistingOnly();
-            var maxObjOption = new Option<int>(
+            Option maxObjOption = new Option<int>(
                     "--max-obj",
                     getDefaultValue: () => -1,
                     description: "Maximum number of City Objects to extract (-1 = unlimited)");
-            var numObjTotalOption = new Option<int>(
+            Option numObjTotalOption = new Option<int>(
                     "--num-obj-total",
                     getDefaultValue: () => -1,
                     description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
-            var rangeOption = new Option<bool>(
+            Option rangeOption = new Option<bool>(
                     "--range",
                     getDefaultValue: () => false,
                     "Extract City Objects from a specific positional range");
-            var xMinOption = new Option<double>(
+            Option xMinOption = new Option<double>(
                     "--x-min",
                     getDefaultValue: () => 0,
                     description: "Range: X Min");
-            var xMaxOption = new Option<double>(
+            Option xMaxOption = new Option<double>(
                     "--x-max",
                     getDefaultValue: () => 0,
                     description: "Range: X Max");
-            var yMinOption = new Option<double>(
+            Option yMinOption = new Option<double>(
                     "--y-min",
                     getDefaultValue: () => 0,
                     description: "Range: Y Min");
-            var yMaxOption = new Option<double>(
+            Option yMaxOption = new Option<double>(
                     "--y-max",
                     getDefaultValue: () => 0,
                     description: "Range: y Max");
-            var outputGMLOption = new Option<FileInfo?>(
+            Option outputGMLOption = new Option<FileInfo?>(
                     "--out-gml",
                     getDefaultValue: () => null,
                     "Output GML file");
-            var outputOBJOption = new Option<FileInfo?>(
+            Option outputOBJOption = new Option<FileInfo?>(
                     "--out-obj",
                     getDefaultValue: () => null,
                     "Output OBJ file");
-            var threadOption = new Option<int>(
+            Option mergeMeshOption = new Option<bool>(
+                    "--merge-mesh",
+                    getDefaultValue: () => false,
+                    "Merge City Objects to a single mesh in the OBJ file");
+            Option threadOption = new Option<int>(
                     "--thread",
                     getDefaultValue: () =>
                     {
@@ -90,7 +94,7 @@ namespace GMLTool
                     },
                     "Number of threads for processing");
 
-            var rootCommand = new RootCommand
+            RootCommand rootCommand = new RootCommand
             {
                 inputArgument,
                 maxObjOption,
@@ -102,20 +106,22 @@ namespace GMLTool
                 yMaxOption,
                 outputGMLOption,
                 outputOBJOption,
+                mergeMeshOption,
                 threadOption,
             };
 
             rootCommand.Description = "GML tool";
 
-            rootCommand.SetHandler((FileInfo input, int maxObj, int numObjTotal, bool subRange, double xMin, double xMax, double yMin, double yMax, FileInfo? outputGML, FileInfo? outputOBJ, int thread) =>
+            rootCommand.SetHandler((FileInfo input, int maxObj, int numObjTotal, bool subRange, double xMin, double xMax, double yMin, double yMax, FileInfo? outputGML, FileInfo? outputOBJ, bool mergeMesh, int thread) =>
             {
-                Main(input, maxObj, numObjTotal, subRange, xMin, xMax, yMin, yMax, outputGML, outputOBJ, thread);
-            }, inputArgument, maxObjOption, numObjTotalOption, rangeOption, xMinOption, xMaxOption, yMinOption, yMaxOption, outputGMLOption, outputOBJOption, threadOption);
+                Main(input, maxObj, numObjTotal, subRange, xMin, xMax, yMin, yMax, outputGML, outputOBJ, mergeMesh, thread);
+            }, inputArgument, maxObjOption, numObjTotalOption, rangeOption, xMinOption, xMaxOption, yMinOption, yMaxOption, outputGMLOption, outputOBJOption, mergeMeshOption, threadOption);
 
             return rootCommand.Invoke(args);
         }
 
-        static void Main(FileInfo input, int maxObj = 30, int numObjTotal = 1082015, bool subRange = false, double xMin = 296179.641, double xMax = 312064.672, double yMin = 45775.873, double yMax = 51791.676, FileInfo? outputGML = null, FileInfo? outputOBJ = null, int thread = 32)
+        static void Main(FileInfo input, int maxObj = 30, int numObjTotal = 1082015, bool subRange = false, double xMin = 296179.641, double xMax = 312064.672, double yMin = 45775.873, double yMax = 51791.676,
+            FileInfo? outputGML = null, FileInfo? outputOBJ = null, bool mergeMesh = false, int thread = 32)
         {
             bool isOutputGML = outputGML != null;
             bool isOutputOBJ = outputOBJ != null;
@@ -225,10 +231,10 @@ namespace GMLTool
                                     hasBoundary = false;
                                 }
                                 memberNavigator.MoveToRoot();
-                                   
+
                                 // fallback: boundary detection
 
-                                if(!hasBoundary)
+                                if (!hasBoundary)
                                 {
                                     lx = double.MaxValue;
                                     ly = double.MaxValue;
@@ -250,8 +256,8 @@ namespace GMLTool
                                             for (int i = 0; i < vals.Length; i += 3)
                                             {
                                                 double x = double.Parse(vals[i]);
-                                                double y = double.Parse(vals[i+1]);
-                                                double z = double.Parse(vals[i+2]);
+                                                double y = double.Parse(vals[i + 1]);
+                                                double z = double.Parse(vals[i + 2]);
 
                                                 lx = Math.Min(lx, x);
                                                 ly = Math.Min(ly, y);
@@ -312,7 +318,10 @@ namespace GMLTool
                                         XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
                                         lock (objFaceWriter)
                                         {
-                                            objFaceWriter.WriteLine($"o {objID}/{objName}");
+                                            if (!mergeMesh)
+                                            {
+                                                objFaceWriter.WriteLine($"o {objID}/{objName}");
+                                            }
                                             while (memberObjBuffer.Read())
                                             {
                                                 if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
@@ -350,7 +359,7 @@ namespace GMLTool
                                             gmlWriter.WriteNode(memberBuffer, false);
                                         }
                                     }
-                                    
+
                                 }
 
                                 numObjRead++;

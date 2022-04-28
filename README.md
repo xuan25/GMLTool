@@ -14,7 +14,6 @@ Trimming Large CityGML files and exporting to Wavefront OBJ files
 ## Usage
 
 ```
-> GMLTool -h
 Description:
   GML tool
 
@@ -35,8 +34,8 @@ Options:
   --y-max <y-max>                  Range: y Max [default: 0]
   --out-gml <out-gml>              Output GML file []
   --out-obj <out-obj>              Output OBJ file []
+  --merge-mesh                     Merge City Objects to a single mesh in the OBJ file [default: False]
   --thread <thread>                Number of threads for processing [default: 32767]
   --version                        Show version information
   -?, -h, --help                   Show help and usage information
-
 ```
