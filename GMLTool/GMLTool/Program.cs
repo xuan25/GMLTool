@@ -19,27 +19,27 @@ namespace GMLTool
             var numObjTotalOption = new Option<int>(
                     "--num-obj-total",
                     getDefaultValue: () => -1,
-                    description: "Number of City Objects in the GML input file (-1 = unknow)");
+                    description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
             var rangeOption = new Option<bool>(
                     "--range",
                     getDefaultValue: () => false,
-                    "Extract from a specific range");
+                    "Extract City Objects from a specific positional range");
             var xMinOption = new Option<double>(
                     "--x-min",
                     getDefaultValue: () => 0,
-                    description: "Range: x min");
+                    description: "Range: X Min");
             var xMaxOption = new Option<double>(
                     "--x-max",
                     getDefaultValue: () => 0,
-                    description: "Range: x max");
+                    description: "Range: X Max");
             var yMinOption = new Option<double>(
                     "--y-min",
                     getDefaultValue: () => 0,
-                    description: "Range: y min");
+                    description: "Range: Y Min");
             var yMaxOption = new Option<double>(
                     "--y-max",
                     getDefaultValue: () => 0,
-                    description: "Range: y max");
+                    description: "Range: y Max");
             var outputGMLOption = new Option<FileInfo?>(
                     "--out-gml",
                     getDefaultValue: () => null,
@@ -55,7 +55,7 @@ namespace GMLTool
                         ThreadPool.GetMaxThreads(out int workerThreads, out int copletionPortThreads);
                         return workerThreads;
                     },
-                    "Number of threads to processing");
+                    "Number of threads for processing");
 
             var rootCommand = new RootCommand
             {
