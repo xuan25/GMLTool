@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -248,6 +248,16 @@ namespace GMLTool
                                 bool isInvalidRange = subRange && ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
                                 if (!hasBoundary || !isInvalidRange)
                                 {
+                                    // validate max number of objects
+                                    lock (numObjExportedObj)
+                                    {
+                                        if (!(numObjExported < maxObj || maxObj < 0))
+                                        {
+                                            return;
+                                        }
+                                        numObjExported++;
+                                    }
+
                                     // export OBJ
                                     if (isOutputOBJ)
                                     {
@@ -292,8 +302,7 @@ namespace GMLTool
                                             gmlWriter.WriteNode(memberBuffer, false);
                                         }
                                     }
-
-                                    numObjExported++;
+                                    
                                 }
 
                                 numObjRead++;
