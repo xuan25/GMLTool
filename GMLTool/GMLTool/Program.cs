@@ -97,7 +97,7 @@ namespace GMLTool
             int numObjRead = 0;
             int numObjExported = 0;
 
-            int vertixIdx = 1;
+            int vertexIdx = 1;
             int faceIdx = 1;
 
             XmlWriter? gmlWriter = null;
@@ -106,17 +106,17 @@ namespace GMLTool
                 gmlWriter = XmlWriter.Create(outputGML.FullName, new XmlWriterSettings() { Indent = true });
             }
 
-            FileStream? objVertixFileStream = null;
+            FileStream? objVertexFileStream = null;
             FileStream? objFaceFileStream = null;
-            StreamWriter? objVertixWriter = null;
+            StreamWriter? objVertexWriter = null;
             StreamWriter? objFaceWriter = null;
 
             if (isOutputOBJ)
             {
-                objVertixFileStream = new FileStream($"{outputOBJ.FullName}.vect", FileMode.Create);
+                objVertexFileStream = new FileStream($"{outputOBJ.FullName}.vert", FileMode.Create);
                 objFaceFileStream = new FileStream($"{outputOBJ.FullName}.face", FileMode.Create);
 
-                objVertixWriter = new StreamWriter(objVertixFileStream, Encoding.ASCII, -1, true);
+                objVertexWriter = new StreamWriter(objVertexFileStream, Encoding.ASCII, -1, true);
                 objFaceWriter = new StreamWriter(objFaceFileStream, Encoding.ASCII, -1, true);
             }
 
@@ -223,18 +223,18 @@ namespace GMLTool
                                                     string val = memberObjBuffer.ReadElementContentAsString();
                                                     string[] vals = val.Split(' ');
 
-                                                    int vertixIdxStart = vertixIdx;
+                                                    int vertexIdxStart = vertexIdx;
 
                                                     // vertex
                                                     for (int i = 0; i < vals.Length; i += 3)
                                                     {
-                                                        objVertixWriter.WriteLine($"v {double.Parse(vals[i])} {double.Parse(vals[i + 2])} {-double.Parse(vals[i + 1])}");
-                                                        vertixIdx++;
+                                                        objVertexWriter.WriteLine($"v {double.Parse(vals[i])} {double.Parse(vals[i + 2])} {-double.Parse(vals[i + 1])}");
+                                                        vertexIdx++;
                                                     }
 
                                                     // face
                                                     objFaceWriter.Write("f");
-                                                    for (int i = vertixIdxStart; i < vertixIdx; i++)
+                                                    for (int i = vertexIdxStart; i < vertexIdx; i++)
                                                     {
                                                         objFaceWriter.Write($" {i}");
                                                     }
@@ -330,10 +330,10 @@ namespace GMLTool
 
             if (isOutputOBJ)
             {
-                objVertixWriter.Close();
+                objVertexWriter.Close();
                 objFaceWriter.Close();
 
-                objVertixFileStream.Position = 0;
+                objVertexFileStream.Position = 0;
                 objFaceFileStream.Position = 0;
 
                 FileStream objFileStream = new FileStream("output.obj", FileMode.Create);
@@ -343,7 +343,7 @@ namespace GMLTool
                 objWriter.WriteLine($"# Geometric vertices.");
                 objWriter.WriteLine();
                 objWriter.Flush();
-                objVertixFileStream.CopyTo(objFileStream);
+                objVertexFileStream.CopyTo(objFileStream);
                 objWriter.WriteLine();
                 objWriter.WriteLine($"# Polygonal face element.");
                 objWriter.WriteLine();
@@ -353,7 +353,7 @@ namespace GMLTool
                 objWriter.Close();
                 objFileStream.Close();
 
-                objVertixFileStream.Close();
+                objVertexFileStream.Close();
                 objFaceFileStream.Close();
             }
 
