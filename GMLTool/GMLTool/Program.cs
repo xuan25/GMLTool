@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -366,7 +366,7 @@ namespace GMLTool
                 objVertexFileStream.Position = 0;
                 objFaceFileStream.Position = 0;
 
-                FileStream objFileStream = new FileStream("output.obj", FileMode.Create);
+                FileStream objFileStream = new FileStream(outputOBJ.FullName, FileMode.Create);
                 StreamWriter objWriter = new StreamWriter(objFileStream, Encoding.ASCII, -1, true);
 
                 objWriter.WriteLine($"# Write by GML toolkit. Author: Xuan25 (Github).");
