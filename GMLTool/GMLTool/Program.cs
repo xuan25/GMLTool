@@ -77,14 +77,14 @@ namespace GMLTool
                     "--out-gml",
                     getDefaultValue: () => null,
                     "Output GML file");
-            Option outputOBJOption = new Option<FileInfo?>(
-                    "--out-obj",
-                    getDefaultValue: () => null,
-                    "Output OBJ file");
             Option mergeMeshOption = new Option<bool>(
                     "--merge-mesh",
                     getDefaultValue: () => false,
                     "Merge City Objects to a single mesh in the OBJ file");
+            Option outputOBJOption = new Option<FileInfo?>(
+                    "--out-obj",
+                    getDefaultValue: () => null,
+                    "Output OBJ file");
             Option threadOption = new Option<int>(
                     "--thread",
                     getDefaultValue: () =>
@@ -105,23 +105,23 @@ namespace GMLTool
                 yMinOption,
                 yMaxOption,
                 outputGMLOption,
-                outputOBJOption,
                 mergeMeshOption,
+                outputOBJOption,
                 threadOption,
             };
 
             rootCommand.Description = "GML tool";
 
-            rootCommand.SetHandler((FileInfo input, int maxObj, int numObjTotal, bool subRange, double xMin, double xMax, double yMin, double yMax, FileInfo? outputGML, FileInfo? outputOBJ, bool mergeMesh, int thread) =>
+            rootCommand.SetHandler((FileInfo input, int maxObj, int numObjTotal, bool subRange, double xMin, double xMax, double yMin, double yMax, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int thread) =>
             {
-                Main(input, maxObj, numObjTotal, subRange, xMin, xMax, yMin, yMax, outputGML, outputOBJ, mergeMesh, thread);
-            }, inputArgument, maxObjOption, numObjTotalOption, rangeOption, xMinOption, xMaxOption, yMinOption, yMaxOption, outputGMLOption, outputOBJOption, mergeMeshOption, threadOption);
+                Main(input, maxObj, numObjTotal, subRange, xMin, xMax, yMin, yMax, outputGML, mergeMesh, outputOBJ, thread);
+            }, inputArgument, maxObjOption, numObjTotalOption, rangeOption, xMinOption, xMaxOption, yMinOption, yMaxOption, outputGMLOption, mergeMeshOption, outputOBJOption, threadOption);
 
             return rootCommand.Invoke(args);
         }
 
         static void Main(FileInfo input, int maxObj = 30, int numObjTotal = 1082015, bool subRange = false, double xMin = 296179.641, double xMax = 312064.672, double yMin = 45775.873, double yMax = 51791.676,
-            FileInfo? outputGML = null, FileInfo? outputOBJ = null, bool mergeMesh = false, int thread = 32)
+            FileInfo? outputGML = null, bool mergeMesh = false, FileInfo? outputOBJ = null, int thread = 32)
         {
             bool isOutputGML = outputGML != null;
             bool isOutputOBJ = outputOBJ != null;

@@ -6,11 +6,11 @@
     },
     "Example: NYC Buildings": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --max-obj -1 --num-obj-total 1083331 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml ../../../../../Data/nyc_buildings.gml --out-obj ../../../../../Data/nyc_buildings.obj --thread 32"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --max-obj -1 --num-obj-total 1083331 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml ../../../../../Data/nyc_buildings.gml --out-obj ../../../../../Data/nyc_buildings.obj --merge-mesh --thread 32"
     },
     "Example: NYC Roads": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/Road.gml --max-obj -1 --num-obj-total 72564 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml ../../../../../Data/nyc_roads.gml --out-obj ../../../../../Data/nyc_roads.obj --thread 32"
+      "commandLineArgs": "../../../../../Data/Road.gml --max-obj -1 --num-obj-total 72564 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml ../../../../../Data/nyc_roads.gml --out-obj ../../../../../Data/nyc_roads.obj --merge-mesh --thread 32"
     }
   }
 }
