@@ -184,6 +184,13 @@ namespace GMLTool
                             string memberStr = cityModelReader.ReadOuterXml();
                             lock (numPendingWorkObj)
                                 numPendingWork++;
+
+                            // wait for other threads
+                            while(ThreadPool.PendingWorkItemCount > thread * 2)
+                            {
+                                Thread.Sleep(10);
+                            }
+
                             ThreadPool.QueueUserWorkItem((obj) =>
                             {
                                 XmlReader memberReader = XmlReader.Create(new StringReader(memberStr), null);
