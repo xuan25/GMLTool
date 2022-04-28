@@ -20,10 +20,4 @@
     <ProjectReference Include="..\System.CommandLine\System.CommandLine.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="NYC_Buildings_LoD2_CityGML.gml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
