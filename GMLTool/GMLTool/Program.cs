@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -223,18 +223,27 @@ namespace GMLTool
                                 }
                                 memberNavigator.MoveToRoot();
 
-                                string buildingId = null;
+                                string objID = null;
                                 if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
                                     memberNavigator.MoveToFirstChild())   // Building, Road etc.
                                 {
-                                    buildingId = memberNavigator.GetAttribute("id", "http://www.opengis.net/gml");
+                                    objID = memberNavigator.GetAttribute("id", "http://www.opengis.net/gml");
                                 }
                                 memberNavigator.MoveToRoot();
 
-                                if (buildingId == null)
+                                if (objID == null)
                                 {
-                                    buildingId = $"Generated_{Guid.NewGuid()}";
+                                    objID = $"Generated_{Guid.NewGuid()}";
                                 }
+
+                                string objName = string.Empty;
+                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                                    memberNavigator.MoveToFirstChild() &&
+                                    memberNavigator.MoveToChild("name", "http://www.opengis.net/gml"))   // Building, Road etc.
+                                {
+                                    objName = memberNavigator.InnerXml;
+                                }
+                                memberNavigator.MoveToRoot();
 
                                 bool isInvalidRange = subRange && ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
                                 if (!hasBoundary || !isInvalidRange)
@@ -245,7 +254,7 @@ namespace GMLTool
                                         XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
                                         lock (objFaceWriter)
                                         {
-                                            objFaceWriter.WriteLine($"o {buildingId}");
+                                            objFaceWriter.WriteLine($"o {objID}/{objName}");
                                             while (memberObjBuffer.Read())
                                             {
                                                 if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
