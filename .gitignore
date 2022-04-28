@@ -2,4 +2,7 @@
 .vscode/
 bin/
 obj/
-*.gml
+Data/*
+!Data/README.md
+PublishProfiles/
+*.user

@@ -2,7 +2,7 @@
   "profiles": {
     "GMLTool": {
       "commandName": "Project",
-      "commandLineArgs": "NYC_Buildings_LoD2_CityGML.gml --num-obj-total 1082015 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml output.gml --out-obj output.obj --thread 32"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --num-obj-total 1082015 --range --x-min 296179.641 --x-max 312064.672 --y-min 45775.873 --y-max 51791.676 --out-gml ../../../../../Data/output.gml --out-obj ../../../../../Data/output.obj --thread 32"
     }
   }
 }
