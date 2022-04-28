@@ -47,3 +47,6 @@ Options:
 3. Open the solution with Visual Studio, then run the launch setting `Example: NYC Buildings` and `Example: NYC Roads`.
 4. Check output files in `Data/`.
 
+![example.png](img/example.png)
+
+![example2.png](img/example2.png)
