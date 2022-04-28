@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -126,6 +126,7 @@ namespace GMLTool
 
             int numObjRead = 0;
             int numObjExported = 0;
+            object numObjExportedObj = new object();
 
             int vertexIdx = 1;
             int faceIdx = 1;
@@ -187,6 +188,8 @@ namespace GMLTool
                                 bool hasBoundary = true;
                                 double lx = 0, ly = 0, lz = 0, ux = 0, uy = 0, uz = 0;
 
+                                // find existing boundary
+
                                 if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
                                     memberNavigator.MoveToFirstChild() &&   // Building etc.
                                     memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
@@ -222,6 +225,49 @@ namespace GMLTool
                                     hasBoundary = false;
                                 }
                                 memberNavigator.MoveToRoot();
+                                   
+                                // fallback: boundary detection
+
+                                if(!hasBoundary)
+                                {
+                                    lx = double.MaxValue;
+                                    ly = double.MaxValue;
+                                    lz = double.MaxValue;
+
+                                    ux = double.MinValue;
+                                    uy = double.MaxValue;
+                                    uz = double.MaxValue;
+
+                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                    while (memberObjBuffer.Read())
+                                    {
+                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                        {
+                                            string val = memberObjBuffer.ReadElementContentAsString();
+                                            string[] vals = val.Split(' ');
+
+                                            // vertex
+                                            for (int i = 0; i < vals.Length; i += 3)
+                                            {
+                                                double x = double.Parse(vals[i]);
+                                                double y = double.Parse(vals[i+1]);
+                                                double z = double.Parse(vals[i+2]);
+
+                                                lx = Math.Min(lx, x);
+                                                ly = Math.Min(ly, y);
+                                                lz = Math.Min(lz, z);
+
+                                                ux = Math.Max(ux, x);
+                                                uy = Math.Max(uy, y);
+                                                uz = Math.Max(uz, z);
+                                            }
+
+                                            hasBoundary = true;
+                                        }
+                                    }
+                                }
+
+                                // obj ID
 
                                 string objID = null;
                                 if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
@@ -235,6 +281,8 @@ namespace GMLTool
                                 {
                                     objID = $"Generated_{Guid.NewGuid()}";
                                 }
+
+                                // obj name
 
                                 string objName = string.Empty;
                                 if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
