@@ -150,8 +150,8 @@ namespace GMLTool
 
             if (isOutputOBJ)
             {
-                objVertexFileStream = new FileStream($"{outputOBJ.FullName}.vert", FileMode.Create);
-                objFaceFileStream = new FileStream($"{outputOBJ.FullName}.face", FileMode.Create);
+                objVertexFileStream = File.Create($"{outputOBJ.FullName}.vert", 4096, FileOptions.DeleteOnClose | FileOptions.SequentialScan);
+                objFaceFileStream = File.Create($"{outputOBJ.FullName}.face", 4096, FileOptions.DeleteOnClose | FileOptions.SequentialScan);
 
                 objVertexWriter = new StreamWriter(objVertexFileStream, Encoding.ASCII, -1, true);
                 objFaceWriter = new StreamWriter(objFaceFileStream, Encoding.ASCII, -1, true);
@@ -462,6 +462,7 @@ namespace GMLTool
                 objFaceFileStream.Close();
             }
 
+            Console.WriteLine($"Finished: {numObjRead} Objects Read; {numObjExported} Objects Exported");
         }
     }
 }
