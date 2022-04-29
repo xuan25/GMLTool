@@ -5,8 +5,6 @@ VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GMLTool", "GMLTool\GMLTool.csproj", "{16AF5626-9576-49EC-A869-665A88DCCDDC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.CommandLine", "System.CommandLine\System.CommandLine.csproj", "{85C2075F-770D-435B-8506-A060EB7C1CE7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{16AF5626-9576-49EC-A869-665A88DCCDDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16AF5626-9576-49EC-A869-665A88DCCDDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16AF5626-9576-49EC-A869-665A88DCCDDC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{85C2075F-770D-435B-8506-A060EB7C1CE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{85C2075F-770D-435B-8506-A060EB7C1CE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{85C2075F-770D-435B-8506-A060EB7C1CE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{85C2075F-770D-435B-8506-A060EB7C1CE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
