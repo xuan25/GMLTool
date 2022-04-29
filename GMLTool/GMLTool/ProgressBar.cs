@@ -8,7 +8,7 @@ namespace GMLTool
 {
 	public class ProgressBar : IDisposable
 	{
-		private const int blockCount = 50;
+		private const int blockCount = 25;
 		private readonly TimeSpan animationInterval = TimeSpan.FromSeconds(1.0 / 8);
 		private const string animation = @"|/-\";
 

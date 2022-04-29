@@ -44,63 +44,63 @@ namespace GMLTool
             }
 
             Argument inputArgument = new Argument<FileInfo>(
-                    "input",
-                    "Input GML file").ExistingOnly();
+                "input",
+                "Input GML file").ExistingOnly();
 
             Option maxObjOption = new Option<int>(
-                    "--max-obj",
-                    getDefaultValue: () => -1,
-                    description: "Maximum number of City Objects to extract (-1 = unlimited)");
+                "--max-obj",
+                getDefaultValue: () => -1,
+                description: "Maximum number of City Objects to extract (-1 = unlimited)");
             Option numObjTotalOption = new Option<int>(
-                    "--num-obj-total",
-                    getDefaultValue: () => -1,
-                    description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
+                "--num-obj-total",
+                getDefaultValue: () => -1,
+                description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
 
             Argument xMinArgument = new Argument<double>(
-                                "x-min",
-                                description: "Range: X Min");
+                "x-min", 
+                description: "Region: X Min");
             Argument xMaxArgument = new Argument<double>(
-                    "x-max",
-                    description: "Range: X Max");
+                "x-max",
+                description: "Region: X Max");
             Argument yMinArgument = new Argument<double>(
-                    "y-min",
-                    description: "Range: Y Min");
+                "y-min",
+                description: "Region: Y Min");
             Argument yMaxArgument = new Argument<double>(
-                    "y-max",
-                    description: "Range: y Max");
+                "y-max",
+                description: "Region: Y Max");
 
             Option outputGMLOption = new Option<FileInfo?>(
-                    "--out-gml",
-                    getDefaultValue: () => null,
-                    "Output GML file");
+                "--out-gml",
+                getDefaultValue: () => null,
+                "Output GML file");
 
             Option mergeMeshOption = new Option<bool>(
-                    "--merge-mesh",
-                    getDefaultValue: () => false,
-                    "Merge City Objects to a single mesh in the OBJ file");
+                "--merge-mesh",
+                getDefaultValue: () => false,
+                "Merge City Objects to a single mesh in the OBJ file");
             Option outputOBJOption = new Option<FileInfo?>(
-                    "--out-obj",
-                    getDefaultValue: () => null,
-                    "Output OBJ file");
+                "--out-obj",
+                getDefaultValue: () => null,
+                "Output OBJ file");
 
             Argument plotWidthArgument = new Argument<int>(
-                    "width",
-                    description: "Width of the plot in pixel");
+                "width",
+                description: "Width of the plot in pixel");
             Argument plotHeightArgument = new Argument<int>(
-                    "height",
-                    description: "Height of the plot in pixel");
+                "height",
+                description: "Height of the plot in pixel");
 
             Argument outputPlotArgument = new Argument<FileInfo?>(
-                    "output",
-                    "Output plotting image file");
+                "output",
+                "Output plotting image file");
             Option threadsOption = new Option<int>(
-                    "--threads",
-                    getDefaultValue: () =>
-                    {
-                        ThreadPool.GetMaxThreads(out int workerThreads, out int copletionPortThreads);
-                        return workerThreads;
-                    },
-                    "Maximum number of threads for processing");
+                "--threads",
+                getDefaultValue: () =>
+                {
+                    ThreadPool.GetMaxThreads(out int workerThreads, out int copletionPortThreads);
+                    return workerThreads;
+                },
+                "Maximum number of threads for processing");
 
             Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no output")
             {
@@ -109,7 +109,7 @@ namespace GMLTool
 
             Command plotCommand = new Command("--plot", "Plot a 2D image of the city")
             {
-                
+
                 plotWidthArgument,
                 plotHeightArgument,
                 xMinArgument,
@@ -227,7 +227,7 @@ namespace GMLTool
                                 // range validation
                                 Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                lock(updateLock)
+                                lock (updateLock)
                                 {
                                     lx = Math.Min(lx, boundary.LowerX);
                                     ly = Math.Min(ly, boundary.LowerY);
@@ -251,7 +251,7 @@ namespace GMLTool
                     {
                         Thread.Sleep(100);
                     }
-                    
+
                 }
             }
 
@@ -286,7 +286,8 @@ namespace GMLTool
             graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
-            Brush brush = new SolidBrush(Color.FromArgb(255, 255, 255, 255));
+            graphics.Clear(Color.FromArgb(0xff, 0x33, 0x33, 0x33));
+            Brush foregroundBrush = new SolidBrush(Color.FromArgb(0xff, 0xff, 0xff, 0xff));
 
             while (gmlReader.Read())
             {
@@ -321,7 +322,7 @@ namespace GMLTool
                                 // range validation
                                 Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                bool isInvalidRange = 
+                                bool isInvalidRange =
                                     ((boundary.LowerX < xMin && boundary.UpperX < xMin) ||
                                     (boundary.LowerX > xMax && boundary.UpperX > xMax) ||
                                     (boundary.LowerY < yMin && boundary.UpperY < yMin) ||
@@ -338,13 +339,13 @@ namespace GMLTool
                                             string[] vals = val.Split(' ');
 
                                             PointF[] points = new PointF[vals.Length / 3];
-                                            
+
                                             // vertex
                                             for (int i = 0; i < vals.Length; i += 3)
                                             {
                                                 double x = double.Parse(vals[i]);
-                                                double y = double.Parse(vals[i+1]);
-                                                double z = double.Parse(vals[i+2]);
+                                                double y = double.Parse(vals[i + 1]);
+                                                double z = double.Parse(vals[i + 2]);
 
                                                 double xP = (x - xMin) / (xMax - xMin) * width;
                                                 double yP = (1 - ((y - yMin) / (yMax - yMin))) * height;
@@ -354,9 +355,9 @@ namespace GMLTool
                                             Interlocked.Add(ref vertexIdx, vals.Length / 3);
 
                                             // face
-                                            lock(graphics)
+                                            lock (graphics)
                                             {
-                                                graphics.FillPolygon(brush, points);
+                                                graphics.FillPolygon(foregroundBrush, points);
                                             }
                                             Interlocked.Increment(ref faceIdx);
                                         }
@@ -371,11 +372,11 @@ namespace GMLTool
                                 {
                                     double ratio = (numObjRead / (double)numObjTotal);
                                     progressBar.Report(ratio);
-                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjPloted} City Object ploted");
+                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjPloted} City Objects ploted");
                                 }
                                 else
                                 {
-                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjPloted} City Object ploted");
+                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjPloted} City Objects ploted");
                                 }
 
                                 Interlocked.Decrement(ref numPendingWork);
@@ -466,7 +467,7 @@ namespace GMLTool
                             Interlocked.Increment(ref numPendingWork);
 
                             // wait for other threads
-                            while(ThreadPool.PendingWorkItemCount > threads * 2)
+                            while (ThreadPool.PendingWorkItemCount > threads * 2)
                             {
                                 Thread.Sleep(10);
                             }
@@ -506,10 +507,10 @@ namespace GMLTool
                                 // range validation
                                 Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                bool isInvalidRange = region && 
-                                    ((boundary.LowerX < xMin && boundary.UpperX < xMin) || 
-                                    (boundary.LowerX > xMax && boundary.UpperX > xMax) || 
-                                    (boundary.LowerY < yMin && boundary.UpperY < yMin) || 
+                                bool isInvalidRange = region &&
+                                    ((boundary.LowerX < xMin && boundary.UpperX < xMin) ||
+                                    (boundary.LowerX > xMax && boundary.UpperX > xMax) ||
+                                    (boundary.LowerY < yMin && boundary.UpperY < yMin) ||
                                     (boundary.LowerY > yMax && boundary.UpperY > yMax));
                                 if (!boundary.HasBoundary || !isInvalidRange)
                                 {
@@ -577,11 +578,11 @@ namespace GMLTool
                                 if (numObjTotal > 0)
                                 {
                                     double ratio = (numObjRead / (double)numObjTotal);
-                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjExported} City Object ploted");
+                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjExported} City Objects ploted");
                                 }
                                 else
                                 {
-                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjExported} City Object ploted");
+                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjExported} City Objects ploted");
                                 }
 
                                 Interlocked.Decrement(ref numPendingWork);
@@ -668,7 +669,7 @@ namespace GMLTool
 
             Console.WriteLine($"Finished: {numObjRead} Objects Read; {numObjExported} Objects Exported");
         }
-           
+
         struct Boundary
         {
             public bool HasBoundary;
@@ -766,6 +767,6 @@ namespace GMLTool
                 LowerZ = lz
             };
         }
-    
+
     }
 }
