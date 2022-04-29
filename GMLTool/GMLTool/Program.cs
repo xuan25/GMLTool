@@ -37,9 +37,9 @@ namespace GMLTool
         {
             using (StreamReader licenseReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("GMLTool.LICENSE")))
             {
-                Console.WriteLine("========================");
+                Console.WriteLine(new string('=', 80));
                 Console.WriteLine(licenseReader.ReadToEnd());
-                Console.WriteLine("========================");
+                Console.WriteLine(new string('=', 80));
                 Console.WriteLine();
             }
 
