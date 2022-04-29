@@ -95,11 +95,7 @@ namespace GMLTool
                 "Output plotting image file");
             Option threadsOption = new Option<int>(
                 "--threads",
-                getDefaultValue: () =>
-                {
-                    ThreadPool.GetMaxThreads(out int workerThreads, out int copletionPortThreads);
-                    return workerThreads;
-                },
+                getDefaultValue: () => 1,
                 "Maximum number of threads for processing");
 
             Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no output")
@@ -182,7 +178,8 @@ namespace GMLTool
         {
             ProgressBar progressBar = new ProgressBar();
 
-            ThreadPool.SetMaxThreads(threads, 2);
+            ThreadPool.SetMinThreads(0, 0);
+            ThreadPool.SetMaxThreads(threads + 1, threads);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
 
@@ -271,7 +268,8 @@ namespace GMLTool
         {
             ProgressBar progressBar = new ProgressBar();
 
-            ThreadPool.SetMaxThreads(threads, 2);
+            ThreadPool.SetMinThreads(0, 0);
+            ThreadPool.SetMaxThreads(threads + 1, threads);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
 
@@ -409,7 +407,8 @@ namespace GMLTool
             bool isOutputGML = outputGML != null;
             bool isOutputOBJ = outputOBJ != null;
 
-            ThreadPool.SetMaxThreads(threads, 2);
+            ThreadPool.SetMinThreads(0, 0);
+            ThreadPool.SetMaxThreads(threads + 1, threads);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
 
@@ -578,11 +577,12 @@ namespace GMLTool
                                 if (numObjTotal > 0)
                                 {
                                     double ratio = (numObjRead / (double)numObjTotal);
-                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjExported} City Objects ploted");
+                                    progressBar.Report(ratio);
+                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjExported} City Objects exported");
                                 }
                                 else
                                 {
-                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjExported} City Objects ploted");
+                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjExported} City Objects exported");
                                 }
 
                                 Interlocked.Decrement(ref numPendingWork);
