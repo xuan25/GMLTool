@@ -6,11 +6,11 @@
     },
     "Example: Probe NYC Buildings": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --probe --threads 64"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --probe --threads 2"
     },
     "Example: Probe NYC Roads": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/Road.gml --probe --threads 64"
+      "commandLineArgs": "../../../../../Data/Road.gml --probe --threads 2"
     },
     "Example: Plot NYC Buildings": {
       "commandName": "Project",

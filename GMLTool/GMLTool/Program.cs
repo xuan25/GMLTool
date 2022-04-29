@@ -235,8 +235,9 @@ namespace GMLTool
                                     uy = Math.Max(uy, boundary.UpperY);
                                 }
 
-                                // progress display
+                                Interlocked.Increment(ref numObjRead);
 
+                                // progress display
                                 progressBar.Template($"[{numObjRead}] Probing... {{Icon}}");
 
                                 Interlocked.Decrement(ref numPendingWork);
