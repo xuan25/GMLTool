@@ -23,6 +23,7 @@
 */
 
 using System.CommandLine;
+using System.Drawing;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -45,6 +46,7 @@ namespace GMLTool
             Argument inputArgument = new Argument<FileInfo>(
                     "input",
                     "Input GML file").ExistingOnly();
+
             Option maxObjOption = new Option<int>(
                     "--max-obj",
                     getDefaultValue: () => -1,
@@ -53,30 +55,30 @@ namespace GMLTool
                     "--num-obj-total",
                     getDefaultValue: () => -1,
                     description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
+
             Option rangeOption = new Option<bool>(
                     "--range",
                     getDefaultValue: () => false,
                     "Extract City Objects from a specific positional range");
-            Option xMinOption = new Option<double>(
-                    "--x-min",
-                    getDefaultValue: () => 0,
-                    description: "Range: X Min");
-            Option xMaxOption = new Option<double>(
-                    "--x-max",
-                    getDefaultValue: () => 0,
+
+            Argument xMinArgument = new Argument<double>(
+                                "x-min",
+                                description: "Range: X Min");
+            Argument xMaxArgument = new Argument<double>(
+                    "x-max",
                     description: "Range: X Max");
-            Option yMinOption = new Option<double>(
-                    "--y-min",
-                    getDefaultValue: () => 0,
+            Argument yMinArgument = new Argument<double>(
+                    "y-min",
                     description: "Range: Y Min");
-            Option yMaxOption = new Option<double>(
-                    "--y-max",
-                    getDefaultValue: () => 0,
+            Argument yMaxArgument = new Argument<double>(
+                    "y-max",
                     description: "Range: y Max");
+
             Option outputGMLOption = new Option<FileInfo?>(
                     "--out-gml",
                     getDefaultValue: () => null,
                     "Output GML file");
+
             Option mergeMeshOption = new Option<bool>(
                     "--merge-mesh",
                     getDefaultValue: () => false,
@@ -85,48 +87,485 @@ namespace GMLTool
                     "--out-obj",
                     getDefaultValue: () => null,
                     "Output OBJ file");
-            Option threadOption = new Option<int>(
-                    "--thread",
+
+            Argument plotWidthArgument = new Argument<int>(
+                    "width",
+                    description: "Width of the plot in pixel");
+            Argument plotHeightArgument = new Argument<int>(
+                    "height",
+                    description: "Height of the plot in pixel");
+
+            Argument outputPlotArgument = new Argument<FileInfo?>(
+                    "output",
+                    "Output plotting image file");
+            Option threadsOption = new Option<int>(
+                    "--threads",
                     getDefaultValue: () =>
                     {
                         ThreadPool.GetMaxThreads(out int workerThreads, out int copletionPortThreads);
                         return workerThreads;
                     },
-                    "Number of threads for processing");
+                    "Maximum number of threads for processing");
+
+            Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no output")
+            {
+                threadsOption,
+            };
+
+            Command plotCommand = new Command("--plot", "Plot a 2D image of the city")
+            {
+                
+                plotWidthArgument,
+                plotHeightArgument,
+                xMinArgument,
+                xMaxArgument,
+                yMinArgument,
+                yMaxArgument,
+                outputPlotArgument,
+                maxObjOption,
+                numObjTotalOption,
+                threadsOption,
+            };
+
+            Command exportRangeCommand = new Command("--range", "Extract City Objects from a specific positional range")
+            {
+                xMinArgument,
+                xMaxArgument,
+                yMinArgument,
+                yMaxArgument,
+            };
+
+            Command exportCommand = new Command("--export", "Export from CityGML")
+            {
+                outputGMLOption,
+                mergeMeshOption,
+                outputOBJOption,
+                maxObjOption,
+                numObjTotalOption,
+                threadsOption,
+                exportRangeCommand,
+            };
 
             RootCommand rootCommand = new RootCommand
             {
                 inputArgument,
-                maxObjOption,
-                numObjTotalOption,
-                rangeOption,
-                xMinOption,
-                xMaxOption,
-                yMinOption,
-                yMaxOption,
-                outputGMLOption,
-                mergeMeshOption,
-                outputOBJOption,
-                threadOption,
+                probeCommand,
+                plotCommand,
+                exportCommand,
             };
-
             rootCommand.Description = "GML tool";
 
-            rootCommand.SetHandler((FileInfo input, int maxObj, int numObjTotal, bool subRange, double xMin, double xMax, double yMin, double yMax, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int thread) =>
+            rootCommand.SetHandler(() =>
             {
-                Main(input, maxObj, numObjTotal, subRange, xMin, xMax, yMin, yMax, outputGML, mergeMesh, outputOBJ, thread);
-            }, inputArgument, maxObjOption, numObjTotalOption, rangeOption, xMinOption, xMaxOption, yMinOption, yMaxOption, outputGMLOption, mergeMeshOption, outputOBJOption, threadOption);
+                Console.WriteLine("Please select an action (probe, plot, export)");
+            });
+
+            probeCommand.SetHandler((FileInfo input, int threads) =>
+            {
+                Probe(input, threads);
+            }, inputArgument, threadsOption);
+
+            plotCommand.SetHandler((FileInfo input, int width, int height, double xMin, double xMax, double yMin, double yMax, FileInfo outputPlot, int maxObj, int numObjTotal, int threads) =>
+            {
+                Plot(input, width, height, xMin, xMax, yMin, yMax, outputPlot, numObjTotal, threads);
+            }, inputArgument, plotWidthArgument, plotHeightArgument, xMinArgument, xMaxArgument, yMinArgument, yMaxArgument, outputPlotArgument, maxObjOption, numObjTotalOption, threadsOption);
+
+            exportCommand.SetHandler((FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads) =>
+            {
+                Export(input, outputGML, mergeMesh, outputOBJ, maxObj, numObjTotal, threads, false, double.NaN, double.NaN, double.NaN, double.NaN);
+            }, inputArgument, outputGMLOption, mergeMeshOption, outputOBJOption, maxObjOption, numObjTotalOption, threadsOption);
+
+            exportRangeCommand.SetHandler((FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, double xMin, double xMax, double yMin, double yMax) =>
+            {
+                Export(input, outputGML, mergeMesh, outputOBJ, maxObj, numObjTotal, threads, true, xMin, xMax, yMin, yMax);
+            }, inputArgument, outputGMLOption, mergeMeshOption, outputOBJOption, maxObjOption, numObjTotalOption, threadsOption, xMinArgument, xMaxArgument, yMinArgument, yMaxArgument);
 
             return rootCommand.Invoke(args);
         }
 
-        static void Main(FileInfo input, int maxObj = 30, int numObjTotal = 1082015, bool subRange = false, double xMin = 296179.641, double xMax = 312064.672, double yMin = 45775.873, double yMax = 51791.676,
-            FileInfo? outputGML = null, bool mergeMesh = false, FileInfo? outputOBJ = null, int thread = 32)
+        static void Probe(FileInfo input, int threads)
+        {
+            ThreadPool.SetMaxThreads(threads, 2);
+
+            XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
+
+            int numObjRead = 0;
+
+            int vertexIdx = 1;
+            int faceIdx = 1;
+
+            double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
+
+            while (gmlReader.Read())
+            {
+                if (gmlReader.NodeType == XmlNodeType.Element && gmlReader.LocalName == "CityModel" && gmlReader.NamespaceURI == "http://www.opengis.net/citygml/2.0")
+                {
+                    XmlReader cityModelReader = XmlReader.Create(gmlReader, null);
+                    cityModelReader.Read();
+
+                    object numPendingWorkObj = new object();
+                    int numPendingWork = 0;
+                    while (cityModelReader.Read() &&
+                        !(cityModelReader.NodeType == XmlNodeType.EndElement && cityModelReader.LocalName == "CityModel" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0"))
+                    {
+                        if (cityModelReader.NodeType == XmlNodeType.Element && cityModelReader.LocalName == "cityObjectMember" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0")
+                        {
+                            // extract object content
+
+                            string memberStr = cityModelReader.ReadOuterXml();
+                            lock (numPendingWorkObj)
+                                numPendingWork++;
+
+                            // wait for other threads
+                            while (ThreadPool.PendingWorkItemCount > threads * 2)
+                            {
+                                Thread.Sleep(10);
+                            }
+
+                            ThreadPool.QueueUserWorkItem((obj) =>
+                            {
+                                XmlReader memberReader = XmlReader.Create(new StringReader(memberStr), null);
+                                XPathDocument memberDocument = new XPathDocument(memberReader);
+                                XPathNavigator memberNavigator = memberDocument.CreateNavigator();
+
+                                // range validation
+                                bool hasBoundary = true;
+
+                                // find existing boundary
+
+                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                                    memberNavigator.MoveToFirstChild() &&   // Building etc.
+                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
+                                {
+                                    string val = memberNavigator.Value;
+                                    string[] vals = val.Split(' ');
+                                    lx = Math.Min(lx, double.Parse(vals[0]));
+                                    ly = Math.Min(lx, double.Parse(vals[1]));
+                                    lz = Math.Min(lx, double.Parse(vals[2]));
+                                }
+                                else
+                                {
+                                    hasBoundary = false;
+                                }
+                                memberNavigator.MoveToRoot();
+
+                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                                    memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
+                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
+                                {
+                                    string val = memberNavigator.Value;
+                                    string[] vals = val.Split(' ');
+                                    ux = Math.Max(ux, double.Parse(vals[0]));
+                                    uy = Math.Max(uy, double.Parse(vals[1]));
+                                    uz = Math.Max(uz, double.Parse(vals[2]));
+                                }
+                                else
+                                {
+                                    hasBoundary = false;
+                                }
+                                memberNavigator.MoveToRoot();
+
+                                // fallback: boundary detection
+
+                                if (!hasBoundary)
+                                {
+                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                    while (memberObjBuffer.Read())
+                                    {
+                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                        {
+                                            string val = memberObjBuffer.ReadElementContentAsString();
+                                            string[] vals = val.Split(' ');
+
+                                            // vertex
+                                            for (int i = 0; i < vals.Length; i += 3)
+                                            {
+                                                double x = double.Parse(vals[i]);
+                                                double y = double.Parse(vals[i + 1]);
+                                                double z = double.Parse(vals[i + 2]);
+
+                                                lx = Math.Min(lx, x);
+                                                ly = Math.Min(ly, y);
+                                                lz = Math.Min(lz, z);
+
+                                                ux = Math.Max(ux, x);
+                                                uy = Math.Max(uy, y);
+                                                uz = Math.Max(uz, z);
+                                            }
+
+                                            hasBoundary = true;
+                                        }
+                                    }
+                                }
+
+                                if (hasBoundary)
+                                {
+                                    // probe object
+                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                    while (memberObjBuffer.Read())
+                                    {
+                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                        {
+                                            string val = memberObjBuffer.ReadElementContentAsString();
+                                            string[] vals = val.Split(' ');
+
+                                            //int vertexIdxStart = vertexIdx;
+
+                                            // vertex
+                                            for (int i = 0; i < vals.Length; i += 3)
+                                            {
+                                                vertexIdx++;
+                                            }
+
+                                            // face
+                                            faceIdx++;
+                                        }
+                                    }
+                                }
+
+                                numObjRead++;
+
+                                // progress display
+
+                                if (numObjRead % 1000 == 0)
+                                {
+                                    Console.WriteLine($"[{numObjRead}] 0 City Object exported");
+                                }
+
+                                lock (numPendingWorkObj)
+                                    numPendingWork--;
+                            });
+                        }
+                    }
+
+                    while (numPendingWork != 0)
+                    {
+                        Thread.Sleep(100);
+                    }
+
+                }
+            }
+
+            Console.WriteLine($"Finished");
+            Console.WriteLine();
+            Console.WriteLine($"Number of City Objects: {numObjRead}");
+            Console.WriteLine($"Number of vertics: {vertexIdx - 1}");
+            Console.WriteLine($"Number of faces: {faceIdx - 1}");
+            Console.WriteLine($"Range of X: [{lx} - {ux}]");
+            Console.WriteLine($"Range of Y: [{ly} - {uy}]");
+            Console.WriteLine($"Range of Z: [{lz} - {uz}]");
+        }
+
+        static void Plot(FileInfo input, int width, int height, double xMin, double xMax, double yMin, double yMax, FileInfo output, int numObjTotal, int threads)
+        {
+            ThreadPool.SetMaxThreads(threads, 2);
+
+            XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
+
+            int numObjRead = 0;
+            int numObjPloted = 0;
+
+            int vertexIdx = 1;
+            int faceIdx = 1;
+
+            Bitmap bitmap = new Bitmap(width, height);
+            Graphics graphics = Graphics.FromImage(bitmap);
+            Brush brush = new SolidBrush(Color.FromArgb(255, 255, 255, 255));
+
+            while (gmlReader.Read())
+            {
+                if (gmlReader.NodeType == XmlNodeType.Element && gmlReader.LocalName == "CityModel" && gmlReader.NamespaceURI == "http://www.opengis.net/citygml/2.0")
+                {
+                    XmlReader cityModelReader = XmlReader.Create(gmlReader, null);
+                    cityModelReader.Read();
+
+                    object numPendingWorkObj = new object();
+                    int numPendingWork = 0;
+                    while (cityModelReader.Read() &&
+                        !(cityModelReader.NodeType == XmlNodeType.EndElement && cityModelReader.LocalName == "CityModel" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0"))
+                    {
+                        if (cityModelReader.NodeType == XmlNodeType.Element && cityModelReader.LocalName == "cityObjectMember" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0")
+                        {
+                            // extract object content
+
+                            string memberStr = cityModelReader.ReadOuterXml();
+                            lock (numPendingWorkObj)
+                                numPendingWork++;
+
+                            // wait for other threads
+                            while (ThreadPool.PendingWorkItemCount > threads * 2)
+                            {
+                                Thread.Sleep(10);
+                            }
+
+                            ThreadPool.QueueUserWorkItem((obj) =>
+                            {
+                                XmlReader memberReader = XmlReader.Create(new StringReader(memberStr), null);
+                                XPathDocument memberDocument = new XPathDocument(memberReader);
+                                XPathNavigator memberNavigator = memberDocument.CreateNavigator();
+
+                                // range validation
+                                bool hasBoundary = true;
+                                double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
+
+                                // find existing boundary
+
+                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                                    memberNavigator.MoveToFirstChild() &&   // Building etc.
+                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
+                                {
+                                    string val = memberNavigator.Value;
+                                    string[] vals = val.Split(' ');
+                                    lx = double.Parse(vals[0]);
+                                    ly = double.Parse(vals[1]);
+                                    lz = double.Parse(vals[2]);
+                                }
+                                else
+                                {
+                                    hasBoundary = false;
+                                }
+                                memberNavigator.MoveToRoot();
+
+                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                                    memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
+                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                                    memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
+                                {
+                                    string val = memberNavigator.Value;
+                                    string[] vals = val.Split(' ');
+                                    ux = double.Parse(vals[0]);
+                                    uy = double.Parse(vals[1]);
+                                    uz = double.Parse(vals[2]);
+                                }
+                                else
+                                {
+                                    hasBoundary = false;
+                                }
+                                memberNavigator.MoveToRoot();
+
+                                // fallback: boundary detection
+                                bool isInvalidRange = ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
+                                if (!hasBoundary || !isInvalidRange)
+                                {
+                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                    while (memberObjBuffer.Read())
+                                    {
+                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                        {
+                                            string val = memberObjBuffer.ReadElementContentAsString();
+                                            string[] vals = val.Split(' ');
+
+                                            // vertex
+                                            for (int i = 0; i < vals.Length; i += 3)
+                                            {
+                                                double x = double.Parse(vals[i]);
+                                                double y = double.Parse(vals[i + 1]);
+                                                double z = double.Parse(vals[i + 2]);
+
+                                                lx = Math.Min(lx, x);
+                                                ly = Math.Min(ly, y);
+                                                lz = Math.Min(lz, z);
+
+                                                ux = Math.Max(ux, x);
+                                                uy = Math.Max(uy, y);
+                                                uz = Math.Max(uz, z);
+                                            }
+
+                                            hasBoundary = true;
+                                        }
+                                    }
+                                }
+
+                                if (hasBoundary)
+                                {
+                                    // probe object
+                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                    while (memberObjBuffer.Read())
+                                    {
+                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                        {
+                                            string val = memberObjBuffer.ReadElementContentAsString();
+                                            string[] vals = val.Split(' ');
+
+                                            PointF[] points = new PointF[vals.Length / 3];
+                                            
+                                            // vertex
+                                            for (int i = 0; i < vals.Length; i += 3)
+                                            {
+                                                double x = double.Parse(vals[i]);
+                                                double y = double.Parse(vals[i+1]);
+                                                double z = double.Parse(vals[i+2]);
+
+                                                double xP = (x - xMin) / (xMax - xMin) * width;
+                                                double yP = (y - yMin) / (yMax - yMin) * height;
+
+                                                points[i / 3] = new PointF((float)xP, (float)yP);
+                                                vertexIdx++;
+                                            }
+
+                                            // face
+                                            lock(graphics)
+                                            {
+                                                graphics.FillPolygon(brush, points);
+                                            }
+                                            faceIdx++;
+                                        }
+                                    }
+                                }
+
+                                numObjRead++;
+
+                                // progress display
+
+                                if (numObjRead % 1000 == 0)
+                                {
+                                    if (numObjTotal > 0)
+                                    {
+                                        double ratio = (numObjRead / (double)numObjTotal);
+                                        Console.WriteLine($"[{ratio:P}] {numObjPloted} City Object ploted");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"[{numObjRead}] {numObjPloted} City Object ploted");
+                                    }
+                                }
+
+                                lock (numPendingWorkObj)
+                                    numPendingWork--;
+                            });
+                        }
+                    }
+
+                    while (numPendingWork != 0)
+                    {
+                        Thread.Sleep(100);
+                    }
+
+                }
+            }
+
+            bitmap.Save(output.FullName);
+
+            Console.WriteLine($"Finished");
+            Console.WriteLine();
+            Console.WriteLine($"Number of City Objects: {numObjRead}");
+            Console.WriteLine($"Number of vertics: {vertexIdx - 1}");
+            Console.WriteLine($"Number of faces: {faceIdx - 1}");
+        }
+
+        static void Export(FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, bool subRange, double xMin, double xMax, double yMin, double yMax)
         {
             bool isOutputGML = outputGML != null;
             bool isOutputOBJ = outputOBJ != null;
 
-            ThreadPool.SetMaxThreads(thread, 2);
+            ThreadPool.SetMaxThreads(threads, 2);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
 
@@ -186,7 +625,7 @@ namespace GMLTool
                                 numPendingWork++;
 
                             // wait for other threads
-                            while(ThreadPool.PendingWorkItemCount > thread * 2)
+                            while(ThreadPool.PendingWorkItemCount > threads * 2)
                             {
                                 Thread.Sleep(10);
                             }
@@ -199,7 +638,7 @@ namespace GMLTool
 
                                 // range validation
                                 bool hasBoundary = true;
-                                double lx = 0, ly = 0, lz = 0, ux = 0, uy = 0, uz = 0;
+                                double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
 
                                 // find existing boundary
 
@@ -243,14 +682,6 @@ namespace GMLTool
 
                                 if (!hasBoundary)
                                 {
-                                    lx = double.MaxValue;
-                                    ly = double.MaxValue;
-                                    lz = double.MaxValue;
-
-                                    ux = double.MinValue;
-                                    uy = double.MaxValue;
-                                    uz = double.MaxValue;
-
                                     XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
                                     while (memberObjBuffer.Read())
                                     {
