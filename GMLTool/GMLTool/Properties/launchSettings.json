@@ -14,23 +14,27 @@
     },
     "Example: Plot NYC Buildings": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --plot 2560 1440 296179.641 312064.672 45775.873 51791.676 ../../../../../Data/plot.png --max-obj -1 --num-obj-total 1083331 --threads 64"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --plot 4000 4000 278344.415096403 325334.16689638 36879.3363186475 83109.6990185874 ../../../../../Data/nyc_buildings.png --max-obj -1 --num-obj-total 1083433 --threads 64"
+    },
+    "Example: Plot NYC Roads": {
+      "commandName": "Project",
+      "commandLineArgs": "../../../../../Data/Road.gml --plot 4000 4000 278344.415096403 325334.16689638 36879.3363186475 83109.6990185874 ../../../../../Data/nyc_roads.png --max-obj -1 --num-obj-total 72579 --threads 64"
     },
     "Example: Export NYC Buildings": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --export --out-gml ../../../../../Data/nyc_buildings.gml --merge-mesh --out-obj ../../../../../Data/nyc_buildings.obj --max-obj -1 --num-obj-total 1083331 --threads 64"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --export --out-gml ../../../../../Data/nyc_buildings.gml --merge-mesh --out-obj ../../../../../Data/nyc_buildings.obj --max-obj -1 --num-obj-total 1083433 --threads 64"
     },
     "Example: Export NYC Roads": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/Road.gml --export --out-gml ../../../../../Data/nyc_roads.gml --merge-mesh --out-obj ../../../../../Data/nyc_roads.obj --max-obj -1 --num-obj-total 72564 --thread 64"
+      "commandLineArgs": "../../../../../Data/Road.gml --export --out-gml ../../../../../Data/nyc_roads.gml --merge-mesh --out-obj ../../../../../Data/nyc_roads.obj --max-obj -1 --num-obj-total 72579 --thread 64"
     },
     "Example: Export NYC Buildings (sub-region)": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --export --out-gml ../../../../../Data/nyc_buildings.gml --merge-mesh --out-obj ../../../../../Data/nyc_buildings.obj --max-obj -1 --num-obj-total 1083331 --threads 64 --range 296179.641 312064.672 45775.873 51791.676"
+      "commandLineArgs": "../../../../../Data/NYC_Buildings_LoD2_CityGML.gml --export --out-gml ../../../../../Data/nyc_buildings_sub.gml --merge-mesh --out-obj ../../../../../Data/nyc_buildings_sub.obj --max-obj -1 --num-obj-total 1083433 --threads 64 --region 296179.641 312064.672 45775.873 51791.676"
     },
     "Example: Export NYC Roads (sub-region)": {
       "commandName": "Project",
-      "commandLineArgs": "../../../../../Data/Road.gml --export --out-gml ../../../../../Data/nyc_roads.gml --merge-mesh --out-obj ../../../../../Data/nyc_roads.obj --max-obj -1 --num-obj-total 72564 --thread 64 --range 296179.641 312064.672 45775.873 51791.676"
+      "commandLineArgs": "../../../../../Data/Road.gml --export --out-gml ../../../../../Data/nyc_roads_sub.gml --merge-mesh --out-obj ../../../../../Data/nyc_roads_sub.obj --max-obj -1 --num-obj-total 72579 --thread 64 --region 296179.641 312064.672 45775.873 51791.676"
     }
   }
 }

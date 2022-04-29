@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -55,11 +55,6 @@ namespace GMLTool
                     "--num-obj-total",
                     getDefaultValue: () => -1,
                     description: "Number of City Objects in the GML input file (-1 = unknown, no progress will be shown)");
-
-            Option rangeOption = new Option<bool>(
-                    "--range",
-                    getDefaultValue: () => false,
-                    "Extract City Objects from a specific positional range");
 
             Argument xMinArgument = new Argument<double>(
                                 "x-min",
@@ -127,7 +122,7 @@ namespace GMLTool
                 threadsOption,
             };
 
-            Command exportRangeCommand = new Command("--range", "Extract City Objects from a specific positional range")
+            Command exportRegionCommand = new Command("--region", "Extract City Objects from a sub-region")
             {
                 xMinArgument,
                 xMaxArgument,
@@ -143,7 +138,7 @@ namespace GMLTool
                 maxObjOption,
                 numObjTotalOption,
                 threadsOption,
-                exportRangeCommand,
+                exportRegionCommand,
             };
 
             RootCommand rootCommand = new RootCommand
@@ -175,7 +170,7 @@ namespace GMLTool
                 Export(input, outputGML, mergeMesh, outputOBJ, maxObj, numObjTotal, threads, false, double.NaN, double.NaN, double.NaN, double.NaN);
             }, inputArgument, outputGMLOption, mergeMeshOption, outputOBJOption, maxObjOption, numObjTotalOption, threadsOption);
 
-            exportRangeCommand.SetHandler((FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, double xMin, double xMax, double yMin, double yMax) =>
+            exportRegionCommand.SetHandler((FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, double xMin, double xMax, double yMin, double yMax) =>
             {
                 Export(input, outputGML, mergeMesh, outputOBJ, maxObj, numObjTotal, threads, true, xMin, xMax, yMin, yMax);
             }, inputArgument, outputGMLOption, mergeMeshOption, outputOBJOption, maxObjOption, numObjTotalOption, threadsOption, xMinArgument, xMaxArgument, yMinArgument, yMaxArgument);
@@ -406,7 +401,7 @@ namespace GMLTool
             Console.WriteLine($"Number of faces: {faceIdx - 1}");
         }
 
-        static void Export(FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, bool subRange, double xMin, double xMax, double yMin, double yMax)
+        static void Export(FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, bool region, double xMin, double xMax, double yMin, double yMax)
         {
             ProgressBar progressBar = new ProgressBar();
 
@@ -511,7 +506,7 @@ namespace GMLTool
                                 // range validation
                                 Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                bool isInvalidRange = subRange && 
+                                bool isInvalidRange = region && 
                                     ((boundary.LowerX < xMin && boundary.UpperX < xMin) || 
                                     (boundary.LowerX > xMax && boundary.UpperX > xMax) || 
                                     (boundary.LowerY < yMin && boundary.UpperY < yMin) || 
