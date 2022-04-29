@@ -196,6 +196,7 @@ namespace GMLTool
             int vertexIdx = 1;
             int faceIdx = 1;
 
+            object updateLock = new object();
             double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
 
             while (gmlReader.Read())
@@ -229,102 +230,18 @@ namespace GMLTool
                                 XPathNavigator memberNavigator = memberDocument.CreateNavigator();
 
                                 // range validation
-                                bool hasBoundary = true;
+                                Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                // find existing boundary
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
+                                lock(updateLock)
                                 {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    lx = Math.Min(lx, double.Parse(vals[0]));
-                                    ly = Math.Min(ly, double.Parse(vals[1]));
-                                    lz = Math.Min(lz, double.Parse(vals[2]));
+                                    lx = Math.Min(lx, boundary.LowerX);
+                                    ly = Math.Min(ly, boundary.LowerY);
+                                    ly = Math.Min(ly, boundary.LowerY);
+
+                                    ux = Math.Max(ux, boundary.UpperX);
+                                    uy = Math.Max(uy, boundary.UpperY);
+                                    uy = Math.Max(uy, boundary.UpperY);
                                 }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
-                                {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    ux = Math.Max(ux, double.Parse(vals[0]));
-                                    uy = Math.Max(uy, double.Parse(vals[1]));
-                                    uz = Math.Max(uz, double.Parse(vals[2]));
-                                }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                // fallback: boundary detection
-
-                                if (!hasBoundary)
-                                {
-                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
-                                    while (memberObjBuffer.Read())
-                                    {
-                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
-                                        {
-                                            string val = memberObjBuffer.ReadElementContentAsString();
-                                            string[] vals = val.Split(' ');
-
-                                            // vertex
-                                            for (int i = 0; i < vals.Length; i += 3)
-                                            {
-                                                double x = double.Parse(vals[i]);
-                                                double y = double.Parse(vals[i + 1]);
-                                                double z = double.Parse(vals[i + 2]);
-
-                                                lx = Math.Min(lx, x);
-                                                ly = Math.Min(ly, y);
-                                                lz = Math.Min(lz, z);
-
-                                                ux = Math.Max(ux, x);
-                                                uy = Math.Max(uy, y);
-                                                uz = Math.Max(uz, z);
-                                            }
-
-                                            hasBoundary = true;
-                                        }
-                                    }
-                                }
-
-                                if (hasBoundary)
-                                {
-                                    // probe object
-                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
-                                    while (memberObjBuffer.Read())
-                                    {
-                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
-                                        {
-                                            string val = memberObjBuffer.ReadElementContentAsString();
-                                            string[] vals = val.Split(' ');
-
-                                            //int vertexIdxStart = vertexIdx;
-
-                                            // vertex
-                                            Interlocked.Add(ref vertexIdx, vals.Length / 3);
-
-                                            // face
-                                            Interlocked.Increment(ref vertexIdx);
-                                        }
-                                    }
-                                }
-
-                                Interlocked.Increment(ref numObjRead);
 
                                 // progress display
 
@@ -371,6 +288,9 @@ namespace GMLTool
 
             Bitmap bitmap = new Bitmap(width, height);
             Graphics graphics = Graphics.FromImage(bitmap);
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+
             Brush brush = new SolidBrush(Color.FromArgb(255, 255, 255, 255));
 
             while (gmlReader.Read())
@@ -404,82 +324,14 @@ namespace GMLTool
                                 XPathNavigator memberNavigator = memberDocument.CreateNavigator();
 
                                 // range validation
-                                bool hasBoundary = true;
-                                double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
+                                Boundary boundary = FindBoundary(memberStr, memberNavigator);
 
-                                // find existing boundary
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
-                                {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    lx = double.Parse(vals[0]);
-                                    ly = double.Parse(vals[1]);
-                                    lz = double.Parse(vals[2]);
-                                }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
-                                {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    ux = double.Parse(vals[0]);
-                                    uy = double.Parse(vals[1]);
-                                    uz = double.Parse(vals[2]);
-                                }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                // fallback: boundary detection
-
-                                if (!hasBoundary)
-                                {
-                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
-                                    while (memberObjBuffer.Read())
-                                    {
-                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
-                                        {
-                                            string val = memberObjBuffer.ReadElementContentAsString();
-                                            string[] vals = val.Split(' ');
-
-                                            // vertex
-                                            for (int i = 0; i < vals.Length; i += 3)
-                                            {
-                                                double x = double.Parse(vals[i]);
-                                                double y = double.Parse(vals[i + 1]);
-                                                double z = double.Parse(vals[i + 2]);
-
-                                                lx = Math.Min(lx, x);
-                                                ly = Math.Min(ly, y);
-                                                lz = Math.Min(lz, z);
-
-                                                ux = Math.Max(ux, x);
-                                                uy = Math.Max(uy, y);
-                                                uz = Math.Max(uz, z);
-                                            }
-
-                                            hasBoundary = true;
-                                        }
-                                    }
-                                }
-
-                                bool isInvalidRange = ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
-                                if (!hasBoundary || !isInvalidRange)
+                                bool isInvalidRange = 
+                                    ((boundary.LowerX < xMin && boundary.UpperX < xMin) ||
+                                    (boundary.LowerX > xMax && boundary.UpperX > xMax) ||
+                                    (boundary.LowerY < yMin && boundary.UpperY < yMin) ||
+                                    (boundary.LowerY > yMax && boundary.UpperY > yMax));
+                                if (!boundary.HasBoundary || !isInvalidRange)
                                 {
                                     // plot object
                                     XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
@@ -500,7 +352,7 @@ namespace GMLTool
                                                 double z = double.Parse(vals[i+2]);
 
                                                 double xP = (x - xMin) / (xMax - xMin) * width;
-                                                double yP = (y - yMin) / (yMax - yMin) * height;
+                                                double yP = (1 - ((y - yMin) / (yMax - yMin))) * height;
 
                                                 points[i / 3] = new PointF((float)xP, (float)yP);
                                             }
@@ -630,81 +482,6 @@ namespace GMLTool
                                 XPathDocument memberDocument = new XPathDocument(memberReader);
                                 XPathNavigator memberNavigator = memberDocument.CreateNavigator();
 
-                                // range validation
-                                bool hasBoundary = true;
-                                double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
-
-                                // find existing boundary
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
-                                {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    lx = double.Parse(vals[0]);
-                                    ly = double.Parse(vals[1]);
-                                    lz = double.Parse(vals[2]);
-                                }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
-                                    memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
-                                    memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
-                                    memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
-                                {
-                                    string val = memberNavigator.Value;
-                                    string[] vals = val.Split(' ');
-                                    ux = double.Parse(vals[0]);
-                                    uy = double.Parse(vals[1]);
-                                    uz = double.Parse(vals[2]);
-                                }
-                                else
-                                {
-                                    hasBoundary = false;
-                                }
-                                memberNavigator.MoveToRoot();
-
-                                // fallback: boundary detection
-
-                                if (!hasBoundary)
-                                {
-                                    XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
-                                    while (memberObjBuffer.Read())
-                                    {
-                                        if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
-                                        {
-                                            string val = memberObjBuffer.ReadElementContentAsString();
-                                            string[] vals = val.Split(' ');
-
-                                            // vertex
-                                            for (int i = 0; i < vals.Length; i += 3)
-                                            {
-                                                double x = double.Parse(vals[i]);
-                                                double y = double.Parse(vals[i + 1]);
-                                                double z = double.Parse(vals[i + 2]);
-
-                                                lx = Math.Min(lx, x);
-                                                ly = Math.Min(ly, y);
-                                                lz = Math.Min(lz, z);
-
-                                                ux = Math.Max(ux, x);
-                                                uy = Math.Max(uy, y);
-                                                uz = Math.Max(uz, z);
-                                            }
-
-                                            hasBoundary = true;
-                                        }
-                                    }
-                                }
-
                                 // obj ID
 
                                 string objID = null;
@@ -731,8 +508,15 @@ namespace GMLTool
                                 }
                                 memberNavigator.MoveToRoot();
 
-                                bool isInvalidRange = subRange && ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
-                                if (!hasBoundary || !isInvalidRange)
+                                // range validation
+                                Boundary boundary = FindBoundary(memberStr, memberNavigator);
+
+                                bool isInvalidRange = subRange && 
+                                    ((boundary.LowerX < xMin && boundary.UpperX < xMin) || 
+                                    (boundary.LowerX > xMax && boundary.UpperX > xMax) || 
+                                    (boundary.LowerY < yMin && boundary.UpperY < yMin) || 
+                                    (boundary.LowerY > yMax && boundary.UpperY > yMax));
+                                if (!boundary.HasBoundary || !isInvalidRange)
                                 {
                                     // validate max number of objects
                                     if (!(numObjExported < maxObj || maxObj < 0))
@@ -889,5 +673,104 @@ namespace GMLTool
 
             Console.WriteLine($"Finished: {numObjRead} Objects Read; {numObjExported} Objects Exported");
         }
+           
+        struct Boundary
+        {
+            public bool HasBoundary;
+            public double UpperX;
+            public double UpperY;
+            public double UpperZ;
+            public double LowerX;
+            public double LowerY;
+            public double LowerZ;
+        }
+
+        static Boundary FindBoundary(string memberStr, XPathNavigator memberNavigator)
+        {
+            bool hasBoundary = true;
+            double lx = double.MaxValue, ly = double.MaxValue, lz = double.MaxValue, ux = double.MinValue, uy = double.MinValue, uz = double.MinValue;
+            // find existing boundary
+
+            if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                memberNavigator.MoveToFirstChild() &&   // Building etc.
+                memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                memberNavigator.MoveToChild("lowerCorner", "http://www.opengis.net/gml"))
+            {
+                string val = memberNavigator.Value;
+                string[] vals = val.Split(' ');
+                lx = double.Parse(vals[0]);
+                ly = double.Parse(vals[1]);
+                lz = double.Parse(vals[2]);
+            }
+            else
+            {
+                hasBoundary = false;
+            }
+            memberNavigator.MoveToRoot();
+
+            if (memberNavigator.MoveToChild("cityObjectMember", "http://www.opengis.net/citygml/2.0") &&
+                memberNavigator.MoveToFirstChild() &&   // Building, Road etc.
+                memberNavigator.MoveToChild("boundedBy", "http://www.opengis.net/gml") &&
+                memberNavigator.MoveToChild("Envelope", "http://www.opengis.net/gml") &&
+                memberNavigator.MoveToChild("upperCorner", "http://www.opengis.net/gml"))
+            {
+                string val = memberNavigator.Value;
+                string[] vals = val.Split(' ');
+                ux = double.Parse(vals[0]);
+                uy = double.Parse(vals[1]);
+                uz = double.Parse(vals[2]);
+            }
+            else
+            {
+                hasBoundary = false;
+            }
+            memberNavigator.MoveToRoot();
+
+            // fallback: boundary detection
+
+            if (!hasBoundary)
+            {
+                XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                while (memberObjBuffer.Read())
+                {
+                    if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                    {
+                        string val = memberObjBuffer.ReadElementContentAsString();
+                        string[] vals = val.Split(' ');
+
+                        // vertex
+                        for (int i = 0; i < vals.Length; i += 3)
+                        {
+                            double x = double.Parse(vals[i]);
+                            double y = double.Parse(vals[i + 1]);
+                            double z = double.Parse(vals[i + 2]);
+
+                            lx = Math.Min(lx, x);
+                            ly = Math.Min(ly, y);
+                            lz = Math.Min(lz, z);
+
+                            ux = Math.Max(ux, x);
+                            uy = Math.Max(uy, y);
+                            uz = Math.Max(uz, z);
+                        }
+
+                        hasBoundary = true;
+                    }
+                }
+            }
+
+            return new Boundary()
+            {
+                HasBoundary = hasBoundary,
+                UpperX = ux,
+                UpperY = uy,
+                UpperZ = uz,
+                LowerX = lx,
+                LowerY = ly,
+                LowerZ = lz
+            };
+        }
+    
     }
 }
