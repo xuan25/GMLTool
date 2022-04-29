@@ -284,8 +284,10 @@ namespace GMLTool
             Graphics graphics = Graphics.FromImage(bitmap);
             graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
             //graphics.Clear(Color.FromArgb(0xff, 0x33, 0x33, 0x33));
+            graphics.Clear(Color.FromArgb(0x00, 0xff, 0xff, 0xff));
             Brush foregroundBrush = new SolidBrush(Color.FromArgb(0xff, 0xff, 0xff, 0xff));
 
             while (gmlReader.Read())
