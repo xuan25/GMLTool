@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MIT License
  * 
  * Copyright (c) 2022 Xuan25
@@ -185,6 +185,8 @@ namespace GMLTool
 
         static void Probe(FileInfo input, int threads)
         {
+            ProgressBar progressBar = new ProgressBar();
+
             ThreadPool.SetMaxThreads(threads, 2);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
@@ -203,7 +205,6 @@ namespace GMLTool
                     XmlReader cityModelReader = XmlReader.Create(gmlReader, null);
                     cityModelReader.Read();
 
-                    object numPendingWorkObj = new object();
                     int numPendingWork = 0;
                     while (cityModelReader.Read() &&
                         !(cityModelReader.NodeType == XmlNodeType.EndElement && cityModelReader.LocalName == "CityModel" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0"))
@@ -213,8 +214,7 @@ namespace GMLTool
                             // extract object content
 
                             string memberStr = cityModelReader.ReadOuterXml();
-                            lock (numPendingWorkObj)
-                                numPendingWork++;
+                            Interlocked.Increment(ref numPendingWork);
 
                             // wait for other threads
                             while (ThreadPool.PendingWorkItemCount > threads * 2)
@@ -242,8 +242,8 @@ namespace GMLTool
                                     string val = memberNavigator.Value;
                                     string[] vals = val.Split(' ');
                                     lx = Math.Min(lx, double.Parse(vals[0]));
-                                    ly = Math.Min(lx, double.Parse(vals[1]));
-                                    lz = Math.Min(lx, double.Parse(vals[2]));
+                                    ly = Math.Min(ly, double.Parse(vals[1]));
+                                    lz = Math.Min(lz, double.Parse(vals[2]));
                                 }
                                 else
                                 {
@@ -316,28 +316,21 @@ namespace GMLTool
                                             //int vertexIdxStart = vertexIdx;
 
                                             // vertex
-                                            for (int i = 0; i < vals.Length; i += 3)
-                                            {
-                                                vertexIdx++;
-                                            }
+                                            Interlocked.Add(ref vertexIdx, vals.Length / 3);
 
                                             // face
-                                            faceIdx++;
+                                            Interlocked.Increment(ref vertexIdx);
                                         }
                                     }
                                 }
 
-                                numObjRead++;
+                                Interlocked.Increment(ref numObjRead);
 
                                 // progress display
 
-                                if (numObjRead % 1000 == 0)
-                                {
-                                    Console.WriteLine($"[{numObjRead}] 0 City Object exported");
-                                }
+                                progressBar.Template($"[{numObjRead}] Probing... {{Icon}}");
 
-                                lock (numPendingWorkObj)
-                                    numPendingWork--;
+                                Interlocked.Decrement(ref numPendingWork);
                             });
                         }
                     }
@@ -346,14 +339,16 @@ namespace GMLTool
                     {
                         Thread.Sleep(100);
                     }
-
+                    
                 }
             }
+
+            progressBar.Dispose();
 
             Console.WriteLine($"Finished");
             Console.WriteLine();
             Console.WriteLine($"Number of City Objects: {numObjRead}");
-            Console.WriteLine($"Number of vertics: {vertexIdx - 1}");
+            Console.WriteLine($"Number of vertices: {vertexIdx - 1}");
             Console.WriteLine($"Number of faces: {faceIdx - 1}");
             Console.WriteLine($"Range of X: [{lx} - {ux}]");
             Console.WriteLine($"Range of Y: [{ly} - {uy}]");
@@ -362,6 +357,8 @@ namespace GMLTool
 
         static void Plot(FileInfo input, int width, int height, double xMin, double xMax, double yMin, double yMax, FileInfo output, int numObjTotal, int threads)
         {
+            ProgressBar progressBar = new ProgressBar();
+
             ThreadPool.SetMaxThreads(threads, 2);
 
             XmlReader gmlReader = XmlReader.Create(input.FullName, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Parse });
@@ -383,7 +380,6 @@ namespace GMLTool
                     XmlReader cityModelReader = XmlReader.Create(gmlReader, null);
                     cityModelReader.Read();
 
-                    object numPendingWorkObj = new object();
                     int numPendingWork = 0;
                     while (cityModelReader.Read() &&
                         !(cityModelReader.NodeType == XmlNodeType.EndElement && cityModelReader.LocalName == "CityModel" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0"))
@@ -393,8 +389,7 @@ namespace GMLTool
                             // extract object content
 
                             string memberStr = cityModelReader.ReadOuterXml();
-                            lock (numPendingWorkObj)
-                                numPendingWork++;
+                            Interlocked.Increment(ref numPendingWork);
 
                             // wait for other threads
                             while (ThreadPool.PendingWorkItemCount > threads * 2)
@@ -451,8 +446,8 @@ namespace GMLTool
                                 memberNavigator.MoveToRoot();
 
                                 // fallback: boundary detection
-                                bool isInvalidRange = ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
-                                if (!hasBoundary || !isInvalidRange)
+
+                                if (!hasBoundary)
                                 {
                                     XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
                                     while (memberObjBuffer.Read())
@@ -483,9 +478,10 @@ namespace GMLTool
                                     }
                                 }
 
-                                if (hasBoundary)
+                                bool isInvalidRange = ((lx < xMin && ux < xMin) || (lx > xMax && ux > xMax) || (ly < yMin && uy < yMin) || (ly > yMax && uy > yMax));
+                                if (!hasBoundary || !isInvalidRange)
                                 {
-                                    // probe object
+                                    // plot object
                                     XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
                                     while (memberObjBuffer.Read())
                                     {
@@ -507,38 +503,35 @@ namespace GMLTool
                                                 double yP = (y - yMin) / (yMax - yMin) * height;
 
                                                 points[i / 3] = new PointF((float)xP, (float)yP);
-                                                vertexIdx++;
                                             }
+                                            Interlocked.Add(ref vertexIdx, vals.Length / 3);
 
                                             // face
                                             lock(graphics)
                                             {
                                                 graphics.FillPolygon(brush, points);
                                             }
-                                            faceIdx++;
+                                            Interlocked.Increment(ref faceIdx);
                                         }
                                     }
+                                    Interlocked.Increment(ref numObjPloted);
                                 }
-
-                                numObjRead++;
+                                Interlocked.Increment(ref numObjRead);
 
                                 // progress display
 
-                                if (numObjRead % 1000 == 0)
+                                if (numObjTotal > 0)
                                 {
-                                    if (numObjTotal > 0)
-                                    {
-                                        double ratio = (numObjRead / (double)numObjTotal);
-                                        Console.WriteLine($"[{ratio:P}] {numObjPloted} City Object ploted");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"[{numObjRead}] {numObjPloted} City Object ploted");
-                                    }
+                                    double ratio = (numObjRead / (double)numObjTotal);
+                                    progressBar.Report(ratio);
+                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjPloted} City Object ploted");
+                                }
+                                else
+                                {
+                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjPloted} City Object ploted");
                                 }
 
-                                lock (numPendingWorkObj)
-                                    numPendingWork--;
+                                Interlocked.Decrement(ref numPendingWork);
                             });
                         }
                     }
@@ -547,9 +540,10 @@ namespace GMLTool
                     {
                         Thread.Sleep(100);
                     }
-
                 }
             }
+
+            progressBar.Dispose();
 
             bitmap.Save(output.FullName);
 
@@ -562,6 +556,8 @@ namespace GMLTool
 
         static void Export(FileInfo input, FileInfo? outputGML, bool mergeMesh, FileInfo? outputOBJ, int maxObj, int numObjTotal, int threads, bool subRange, double xMin, double xMax, double yMin, double yMax)
         {
+            ProgressBar progressBar = new ProgressBar();
+
             bool isOutputGML = outputGML != null;
             bool isOutputOBJ = outputOBJ != null;
 
@@ -571,7 +567,6 @@ namespace GMLTool
 
             int numObjRead = 0;
             int numObjExported = 0;
-            object numObjExportedObj = new object();
 
             int vertexIdx = 1;
             int faceIdx = 1;
@@ -610,7 +605,6 @@ namespace GMLTool
                     }
 
 
-                    object numPendingWorkObj = new object();
                     int numPendingWork = 0;
                     while (cityModelReader.Read() &&
                         !(cityModelReader.NodeType == XmlNodeType.EndElement && cityModelReader.LocalName == "CityModel" && cityModelReader.NamespaceURI == "http://www.opengis.net/citygml/2.0") &&
@@ -621,8 +615,8 @@ namespace GMLTool
                             // extract object content
 
                             string memberStr = cityModelReader.ReadOuterXml();
-                            lock (numPendingWorkObj)
-                                numPendingWork++;
+
+                            Interlocked.Increment(ref numPendingWork);
 
                             // wait for other threads
                             while(ThreadPool.PendingWorkItemCount > threads * 2)
@@ -741,14 +735,11 @@ namespace GMLTool
                                 if (!hasBoundary || !isInvalidRange)
                                 {
                                     // validate max number of objects
-                                    lock (numObjExportedObj)
+                                    if (!(numObjExported < maxObj || maxObj < 0))
                                     {
-                                        if (!(numObjExported < maxObj || maxObj < 0))
-                                        {
-                                            return;
-                                        }
-                                        numObjExported++;
+                                        return;
                                     }
+                                    Interlocked.Increment(ref numObjExported);
 
                                     // export OBJ
                                     if (isOutputOBJ)
@@ -800,26 +791,21 @@ namespace GMLTool
 
                                 }
 
-                                numObjRead++;
+                                Interlocked.Increment(ref numObjRead);
 
                                 // progress display
 
-                                if (numObjRead % 1000 == 0)
+                                if (numObjTotal > 0)
                                 {
-                                    if (numObjTotal > 0)
-                                    {
-                                        double ratio = (numObjRead / (double)numObjTotal);
-                                        Console.WriteLine($"[{ratio:P}] {numObjExported} City Object exported");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"[{numObjRead}] {numObjExported} City Object exported");
-                                    }
-
+                                    double ratio = (numObjRead / (double)numObjTotal);
+                                    progressBar.Template($"[{{Progress}}] {{Bar}} {{Icon}} {numObjExported} City Object ploted");
+                                }
+                                else
+                                {
+                                    progressBar.Template($"[{numObjRead}] {{Icon}} {numObjExported} City Object ploted");
                                 }
 
-                                lock (numPendingWorkObj)
-                                    numPendingWork--;
+                                Interlocked.Decrement(ref numPendingWork);
                             });
                         }
                         else if (cityModelReader.NodeType != XmlNodeType.Whitespace)
@@ -861,7 +847,6 @@ namespace GMLTool
                     {
                         gmlWriter.WriteNode(gmlReader, false);
                     }
-
                 }
             }
 
@@ -899,6 +884,8 @@ namespace GMLTool
                 objVertexFileStream.Close();
                 objFaceFileStream.Close();
             }
+
+            progressBar.Dispose();
 
             Console.WriteLine($"Finished: {numObjRead} Objects Read; {numObjExported} Objects Exported");
         }
