@@ -95,7 +95,7 @@ namespace GMLTool
                 "Output plotting image file");
             Option threadsOption = new Option<int>(
                 "--threads",
-                getDefaultValue: () => 1,
+                getDefaultValue: () => 2,
                 "Maximum number of threads for processing");
 
             Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no file output")
