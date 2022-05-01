@@ -228,11 +228,11 @@ namespace GMLTool
                                 {
                                     lx = Math.Min(lx, boundary.LowerX);
                                     ly = Math.Min(ly, boundary.LowerY);
-                                    ly = Math.Min(ly, boundary.LowerY);
+                                    lz = Math.Min(lz, boundary.LowerZ);
 
                                     ux = Math.Max(ux, boundary.UpperX);
                                     uy = Math.Max(uy, boundary.UpperY);
-                                    uy = Math.Max(uy, boundary.UpperY);
+                                    uz = Math.Max(uz, boundary.UpperZ);
                                 }
 
                                 // probe object
