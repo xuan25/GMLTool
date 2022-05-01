@@ -98,7 +98,7 @@ namespace GMLTool
                 getDefaultValue: () => 1,
                 "Maximum number of threads for processing");
 
-            Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no output")
+            Command probeCommand = new Command("--probe", "Probe the metadata of the GML file, no file output")
             {
                 threadsOption,
             };
@@ -233,6 +233,25 @@ namespace GMLTool
                                     ux = Math.Max(ux, boundary.UpperX);
                                     uy = Math.Max(uy, boundary.UpperY);
                                     uy = Math.Max(uy, boundary.UpperY);
+                                }
+
+                                // probe object
+                                XmlReader memberObjBuffer = XmlReader.Create(new StringReader(memberStr), null);
+                                while (memberObjBuffer.Read())
+                                {
+                                    if (memberObjBuffer.NodeType == XmlNodeType.Element && memberObjBuffer.LocalName == "posList" && memberObjBuffer.NamespaceURI == "http://www.opengis.net/gml")
+                                    {
+                                        string val = memberObjBuffer.ReadElementContentAsString();
+                                        string[] vals = val.Split(' ');
+
+                                        PointF[] points = new PointF[vals.Length / 3];
+
+                                        // vertex
+                                        Interlocked.Add(ref vertexIdx, vals.Length / 3);
+
+                                        // face
+                                        Interlocked.Increment(ref faceIdx);
+                                    }
                                 }
 
                                 Interlocked.Increment(ref numObjRead);
