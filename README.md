@@ -1,12 +1,15 @@
 # GMLTool
 
-Trimming Large CityGML files and exporting to Wavefront OBJ files
+Probing, Plotting and Trimming Large CityGML files. Exporting City Objects to Wavefront OBJ files.
+
+<img src="img/example.png" width="400"/>
 
 ## Feature
 
-- Load CityGML files
-- Extract City Object within a specific positional range.
-- Output the final CityGML
+- Load and Probing CityGML files
+- Extract City Object within a specific region.
+- Plotting 2D image of the CityGML
+- Output the trimmed final CityGML
 - Export CityGML to Wavefront OBJ files with optional mesh merging.
 - Large file supported. Streaming process in order to overcome the memory bottleneck.
 - Multi-thread supporting
@@ -49,7 +52,7 @@ Arguments:
   <input>  Input GML file
 
 Options:
-  --threads <threads>  Maximum number of threads for processing [default: 32767]
+  --threads <threads>  Maximum number of threads for processing [default: 2]
   -?, -h, --help       Show help and usage information
 ```
 
@@ -76,11 +79,11 @@ Options:
   --max-obj <max-obj>              Maximum number of City Objects to extract (-1 = unlimited) [default: -1]
   --num-obj-total <num-obj-total>  Number of City Objects in the GML input file (-1 = unknown, no progress will be
                                    shown) [default: -1]
-  --threads <threads>              Maximum number of threads for processing [default: 32767]
+  --threads <threads>              Maximum number of threads for processing [default: 2]
   -?, -h, --help                   Show help and usage information
 ```
 
-### Plot
+### Export
 
 ```
 Description:
@@ -99,7 +102,7 @@ Options:
   --max-obj <max-obj>              Maximum number of City Objects to extract (-1 = unlimited) [default: -1]
   --num-obj-total <num-obj-total>  Number of City Objects in the GML input file (-1 = unknown, no progress will be
                                    shown) [default: -1]
-  --threads <threads>              Maximum number of threads for processing [default: 32767]
+  --threads <threads>              Maximum number of threads for processing [default: 2]
   -?, -h, --help                   Show help and usage information
 
 
@@ -107,17 +110,12 @@ Commands:
   --region <x-min> <x-max> <y-min> <y-max>  Extract City Objects from a sub-region
 ```
 
-### Plot a sub-region
-
 ## Run Examples
 
 1. Download and place CityGML data into `Data/`. See [Data/README.md](Data/README.md) for more detail. 
 2. Review launch settings and command-line parameters in `GMLTool/GMLTool/Properties/launchSettings.json`.
-3. Open the solution with Visual Studio, then run the launch setting `Example: NYC Buildings` and `Example: NYC Roads`.
+3. Open the solution with Visual Studio, then run the launch settings start with `Example`.
 4. Check output files in `Data/`.
-<!-- 
-<img src="img/example.png" width="400"/><img src="img/example2.png" width="400"/>
-<img src="img/nyc_building.png" width="400"/><img src="img/example2.png" width="400"/> -->
 
 | <img src="img/nyc_buildings.png" width="400"/> | <img src="img/nyc_roads.png" width="400"/> |
 |---|---|
@@ -125,4 +123,4 @@ Commands:
 
 | <img src="img/example.png" width="400"/> | <img src="img/example2.png" width="400"/> |
 |---|---|
-| Rendered Image 1 | Rendered Image 2 |
+| Exported OBJ Rendering 1 | Exported OBJ Rendering 2 |
