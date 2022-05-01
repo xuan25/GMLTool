@@ -34,7 +34,7 @@ Options:
 
 
 Commands:
-  --probe                                                           Probe the metadata of the GML file, no output
+  --probe                                                           Probe the metadata of the GML file, no file output
   --plot <width> <height> <x-min> <x-max> <y-min> <y-max> <output>  Plot a 2D image of the city
   --export                                                          Export from CityGML
 ```
@@ -56,6 +56,17 @@ Options:
   -?, -h, --help       Show help and usage information
 ```
 
+#### Example Result
+
+```
+Number of City Objects: 1083437
+Number of vertices: 74767248
+Number of faces: 12965608
+Range of X: [278344.415096403 - 325334.16689638]
+Range of Y: [36879.3363186475 - 83109.6990185874]
+Range of Z: [-11.8920701041398 - 547.759187198374]
+```
+
 ### Plot
 
 ```
@@ -69,10 +80,10 @@ Arguments:
   <input>   Input GML file
   <width>   Width of the plot in pixel
   <height>  Height of the plot in pixel
-  <x-min>   Range: X Min
-  <x-max>   Range: X Max
-  <y-min>   Range: Y Min
-  <y-max>   Range: y Max
+  <x-min>   Region: X Min
+  <x-max>   Region: X Max
+  <y-min>   Region: Y Min
+  <y-max>   Region: Y Max
   <output>  Output plotting image file
 
 Options:
